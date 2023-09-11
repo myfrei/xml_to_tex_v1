@@ -1,0 +1,331 @@
+\VAR{full_number} Проверка переключения режимов работы БУФ: \VAR{h.add_background_color(h.exist_result(step_status))}.
+
+%% if step_status == 'Passed' or step_status == 'Failed'
+	%% set prec = 1
+	%% set prec1 = 2
+	
+	%% set temp = []
+	
+	%% set Check_TM_test = []
+	
+	%% set AB1_on_current_KPA_limits = []
+	%% set AB2_on_current_KPA_limits = []
+	%% set AB1_off_current_KPA_limits = []
+	%% set AB2_off_current_KPA_limits = []
+	
+	%% set AB1_on_current_TM_limits = []
+	%% set AB2_on_current_TM_limits = []
+	%% set AB1_off_current_TM_limits = []
+	%% set AB2_off_current_TM_limits = []
+	%% set Check_Total_CC_on_Batteries_limits = []
+	
+	%% set On_SHPP_KPA_current_limits = []
+	%% set On_SHPP_TM_current_limits = []
+	%% set Off_SHPP_KPA_current_limits = []
+	%% set Off_SHPP_TM_current_limits = []
+	%% set On_SHPP_TM_voltage_exists = []
+	%% set Off_SHPP_TM_voltage_exists = []
+	
+	%% set On_KSU_KPA_voltage_limits = []
+	%% set Off_KSU_KPA_voltage_limits = []
+	%% set On_KSU_TM_voltage_limits = []
+	%% set Off_KSU_TM_voltage_limits = []
+	
+
+	%% set substeps = e.get_substeps(step, 'SequenceCall', 'Main') 
+
+	%% for substep in substeps
+		%% set substeps_NumericLimitTest = e.get_substeps(substep, 'NumericLimitTest', 'Main') 
+		
+		%% set _ = AB1_off_current_KPA_limits.extend(e.get_test_status_by_name(substeps_NumericLimitTest, 'Check Current Battery 1 KPA Charge Off'))
+		%% set _ = AB2_off_current_KPA_limits.extend(e.get_test_status_by_name(substeps_NumericLimitTest, 'Check Current Battery 2 KPA Charge Off'))
+		%% set _ = AB1_off_current_TM_limits.extend(e.get_test_status_by_name(substeps_NumericLimitTest, 'Check Current Battery 1 TM Charge Off'))
+		%% set _ = AB2_off_current_TM_limits.extend(e.get_test_status_by_name(substeps_NumericLimitTest, 'Check Current Battery 2 TM Charge Off'))
+		
+		%% for substep in substeps_NumericLimitTest
+			
+		% табл 2
+			%% if e.get_numeric_limits([substep], 'Check Current Battery 1 KPA Charge On', 'Numeric')
+			%% set dump = AB1_on_current_KPA_limits.append(e.get_numeric_limits([substep], 'Check Current Battery 1 KPA Charge On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Current Battery 2 KPA Charge On', 'Numeric')
+			%% set dump = AB2_on_current_KPA_limits.append(e.get_numeric_limits([substep], 'Check Current Battery 2 KPA Charge On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Current Battery 1 TM Charge On', 'Numeric')
+			%% set dump = AB1_on_current_TM_limits.append(e.get_numeric_limits([substep], 'Check Current Battery 1 TM Charge On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Current Battery 2 TM Charge On', 'Numeric')
+			%% set dump = AB2_on_current_TM_limits.append(e.get_numeric_limits([substep], 'Check Current Battery 2 TM Charge On', 'Numeric'))
+		
+		% табл 3
+			%% elif e.get_numeric_limits([substep], 'Check Total CC on Batteries', 'Numeric')
+			%% set dump = Check_Total_CC_on_Batteries_limits.append(e.get_numeric_limits([substep], 'Check Total CC on Batteries', 'Numeric'))
+				
+		% табл 4 и подписи снизу		
+			%% elif e.get_numeric_limits([substep], 'Check Current From KPA ShPP On', 'Numeric')
+				%% set dump = On_SHPP_KPA_current_limits.append(e.get_numeric_limits([substep], 'Check Current From KPA ShPP On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Current From KPA ShPP Off', 'Numeric')
+				%% set dump = Off_SHPP_KPA_current_limits.append(e.get_numeric_limits([substep], 'Check Current From KPA ShPP Off', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Current From TM ShPP On', 'Numeric')
+				%% set dump = On_SHPP_TM_current_limits.append(e.get_numeric_limits([substep], 'Check Current From TM ShPP On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Current From TM ShPP Off', 'Numeric')
+				%% set dump = Off_SHPP_TM_current_limits.append(e.get_numeric_limits([substep], 'Check Current From TM ShPP Off', 'Numeric'))
+		
+		% табл 5 и подписи снизу
+			%% elif e.get_numeric_limits([substep], 'Check Voltage From TM KSU On', 'Numeric')
+				%% set dump = On_KSU_TM_voltage_limits.append(e.get_numeric_limits([substep], 'Check Voltage From TM KSU On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Voltage From KPA KSU On', 'Numeric')
+				%% set dump = On_KSU_KPA_voltage_limits.append(e.get_numeric_limits([substep], 'Check Voltage From KPA KSU On', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Voltage From TM KSU Off', 'Numeric')
+				%% set dump = Off_KSU_TM_voltage_limits.append(e.get_numeric_limits([substep], 'Check Voltage From TM KSU Off', 'Numeric'))
+			%% elif e.get_numeric_limits([substep], 'Check Voltage From KPA KSU Off', 'Numeric')
+				%% set dump = Off_KSU_KPA_voltage_limits.append(e.get_numeric_limits([substep], 'Check Voltage From KPA KSU Off', 'Numeric'))
+			%% endif
+			
+		%% endfor
+		
+		% сбор тестов типа 'PassFailTest'
+		%% set PassFailTest_substeps = e.get_substeps(substep, 'PassFailTest', 'Main')
+		%% set _ = Check_TM_test.extend(e.get_test_status_by_name(PassFailTest_substeps, 'Check TM'))
+		% Напряжение при вкл ШППx на ТМИ
+		%% set _ = On_SHPP_TM_voltage_exists.extend(e.get_test_status_by_name(PassFailTest_substeps, 'Check Voltage From TM ShPP On'))
+		% Напряжение при выкл ШППx на ТМИ
+		%% set _ = Off_SHPP_TM_voltage_exists.extend(e.get_test_status_by_name(PassFailTest_substeps, 'Check Voltage From TM ShPP Off'))
+	%% endfor
+
+	% парсинг данных для Напряжение при вкл ШППx на ТМИ
+	%% for i in range(On_SHPP_TM_voltage_exists|length)
+		%% if On_SHPP_TM_voltage_exists[i] != 'Passed'
+			%% set _ = temp.append(i + 1)
+		%% endif
+	%% endfor
+	%копирование данных обратно в On_SHPP_TM_voltage_exists
+	%% set On_SHPP_TM_voltage_exists = temp.copy()
+	%очистка для следующего парсинга - выкл
+	%% set _ = temp.clear()
+	
+	%% for i in range(Off_SHPP_TM_voltage_exists|length)
+		%% if Off_SHPP_TM_voltage_exists[i] != 'Passed'
+			%% set _ = temp.append(i + 1)
+		%% endif
+	%% endfor
+	%копирование данных обратно в Off_SHPP_TM_voltage_exists
+	%% set Off_SHPP_TM_voltage_exists = temp.copy()
+	%% set _ = temp.clear()
+	
+	\vspace{-0.8em}
+	\VAR{measure_of_table6_KPA_TMI}
+	\caption{Токи заряда в цепях аккумуляторых батарей(АБ)} \tabularnewline  \hline 
+	Цепь & На КПА (А) & Допуст. знач. (А) & На ТМИ (А) & Допуст. знач. (А)  & Наличие ошибки \tabularnewline \hline 	
+	\endfirsthead  
+	\multicolumn{6}{l} {\tablename\ \thetable\ -- {Продолжение}} \tabularnewline \hline  
+	Цепь & На КПА (А) & Допустимое значение (А) & На ТМИ (А) & Допуст. знач. (А) & Наличие ошибки \tabularnewline \hline 	
+	\endhead 
+	
+	% Тест на ток при АБ1 ВКЛ
+		%% set AB1_on_current_KPA = h.formatting_float_number(AB1_on_current_KPA_limits[0][0]['result'], precision = prec)
+		
+		%% set text_limits_AB1_on_current_KPA = h.exist_result(h.exist_limits(AB1_on_current_KPA_limits[0][0], 'lo', prec), precision = prec) + h.exist_result(h.exist_limits(AB1_on_current_KPA_limits[0][0], 'comp')) + h.exist_result(h.exist_limits(AB1_on_current_KPA_limits[0][0], 'hi', prec), precision = prec )
+		
+		%% set AB1_on_current_TM = h.formatting_float_number(AB1_on_current_TM_limits[0][0]['result'], precision = prec)
+		
+		%% set text_limits_AB1_on_current_TM =  h.exist_result(h.exist_limits(AB1_on_current_TM_limits[0][0], 'comp')) +  h.exist_result(h.exist_limits(AB1_on_current_TM_limits[0][0], 'lo', prec), precision = prec) 
+		
+		%% if AB1_on_current_KPA_limits[0][0]['status'] != ' ' or AB1_on_current_TM_limits[0][0]['status'] != ' '
+			%% set AB1_on_current_status = Error_Message
+		%% endif
+		
+	% Тест на ток при АБ2 ВКЛ
+		%% set AB2_on_current_KPA = h.formatting_float_number(AB2_on_current_KPA_limits[0][0]['result'], precision = prec)
+		
+		%% set text_limits_AB2_on_current_KPA = h.exist_result(h.exist_limits(AB2_on_current_KPA_limits[0][0], 'lo', prec), precision = prec) + h.exist_result(h.exist_limits(AB2_on_current_KPA_limits[0][0], 'comp')) + h.exist_result(h.exist_limits(AB2_on_current_KPA_limits[0][0], 'hi', prec), precision = prec )
+		
+		%% set AB2_on_current_TM = h.formatting_float_number(AB2_on_current_TM_limits[0][0]['result'], precision = prec)
+		
+		%% set text_limits_AB2_on_current_TM =  h.exist_result(h.exist_limits(AB2_on_current_TM_limits[0][0], 'comp')) +  h.exist_result(h.exist_limits(AB2_on_current_TM_limits[0][0], 'lo', prec), precision = prec) 
+		
+		%% if AB2_on_current_KPA_limits[0][0]['status'] != ' ' or AB2_on_current_TM_limits[0][0]['status'] != ' '
+			%% set AB2_on_current_status = Error_Message
+		%% endif
+	
+		АБ1 & \VAR{AB1_on_current_KPA} & \VAR{text_limits_AB1_on_current_KPA}  & \VAR{AB1_on_current_TM} & \VAR{text_limits_AB1_on_current_TM} &  \VAR{AB1_on_current_status} \tabularnewline \hline
+		АБ2 & \VAR{AB2_on_current_KPA} & \VAR{text_limits_AB2_on_current_KPA}  & \VAR{AB2_on_current_TM} & \VAR{text_limits_AB2_on_current_TM} &  \VAR{AB2_on_current_status} \tabularnewline \hline
+	\end{longtable}
+	\vspace{-0.8em}
+	
+	% Тест на ток при АБ1 ВЫКЛ
+	
+	%% if AB1_off_current_KPA_limits[0] == AB1_off_current_TM_limits[0]== AB2_off_current_KPA_limits[0] == AB2_off_current_TM_limits[0]== 'Passed'
+		Отключение АБ1 и АБ2 прошло успешно.
+	
+	%% elif AB1_off_current_KPA_limits[0] == AB1_off_current_TM_limits[0]== AB2_off_current_KPA_limits[0] == AB2_off_current_TM_limits[0]== 'Failed'
+		Отключение АБ1 и АБ2 прошло \VAR{Not} успешно.
+	
+	%% else
+		%% if AB1_off_current_KPA_limits[0] == AB1_off_current_TM_limits[0]== 'Passed'
+			Отключение АБ1 прошло успешно.
+			
+		%% elif AB1_off_current_KPA_limits[0] == 'Failed' and AB1_off_current_TM_limits[0]== 'Passed'
+			\VAR{Error_Message} при отключении на \colorbox{red}{КПА} АБ1. Отключение ТМИ АБ1 прошло успешно.
+			
+		%% elif AB1_off_current_KPA_limits[0] == 'Passed' and AB1_off_current_TM_limits[0]== 'Failed'
+			\VAR{Error_Message} при отключении на \colorbox{red}{ТМИ} АБ1. Отключение КПА АБ1 прошло успешно.
+			
+		%% elif AB1_off_current_KPA_limits[0] == AB1_off_current_TM_limits[0] == 'Failed' and 	(AB2_off_current_KPA_limits[0] == 'Passed' or AB2_off_current_TM_limits[0] == 'Passed')
+			\VAR{Error_Message} при отключении АБ1.
+			
+		%% endif
+	
+	
+		% Тест на ток при АБ2 ВЫКЛ
+		%% if AB2_off_current_KPA_limits[0] == AB2_off_current_TM_limits[0]== 'Passed'
+			Отключение АБ2 прошло успешно.
+		
+		%% elif AB2_off_current_KPA_limits[0] == 'Failed' and AB2_off_current_TM_limits[0] == 'Passed'
+			Ошибка при отключении на \colorbox{red}{КПА} АБ2. Отключение ТМИ АБ2 прошло успешно.
+		
+		%% elif AB2_off_current_KPA_limits[0] == 'Passed' and AB2_off_current_TM_limits[0] == 'Failed'
+			Ошибка при отключении на \colorbox{red}{ТМИ} АБ2. Отключение КПА АБ2 прошло успешно.
+		
+		%% elif AB2_off_current_KPA_limits[0] == AB2_off_current_TM_limits[0] == 'Failed' and (AB1_off_current_KPA_limits[0] == 'Passed' or AB1_off_current_TM_limits[0] == 'Passed')
+			\VAR{Error_Message} при отключении АБ2.
+		
+		%% endif
+	%% endif
+	
+	%% set IAB_1_2_current_temp = h.formatting_float_number(Check_Total_CC_on_Batteries_limits[0][0]['result'], precision = prec, number_multiplication = 1000)
+	%% if Check_Total_CC_on_Batteries_limits[0][0]['status'] != ' '
+		%% set IAB_1_2_current = '\\colorbox{red}{' + IAB_1_2_current_temp + '}'
+	%% else 
+		%% set IAB_1_2_current = IAB_1_2_current_temp
+	%% endif
+	%% set text_limits_IAB_1_2_current = h.exist_result(h.exist_limits(Check_Total_CC_on_Batteries_limits[0][0], 'comp')) + h.exist_result(h.exist_limits(Check_Total_CC_on_Batteries_limits[0][0], 'lo', prec, number_multiplication = 1000), precision = prec) 
+	В тесте выдачи питания на шину бортовой  сети суммарный ток на ИАБ1(2) составил \VAR{IAB_1_2_current} (мА) при допустимых значениях \VAR{text_limits_IAB_1_2_current} (мА).
+	
+	Прием ТМИ зафиксирован
+	%% print([" ", '\\colorbox{red}{не}' ] [Check_TM_test[0] != 'Passed']) 
+	успешно.
+	
+	% забор значения допустимых значений для вкл КПА 
+		 %% set text_limits_On_SHPP_KPA_current = h.exist_result(h.exist_limits(On_SHPP_KPA_current_limits[0][0], 'lo', prec1), precision = prec1) + h.exist_result(h.exist_limits(On_SHPP_KPA_current_limits[0][0], 'comp')) + h.exist_result(h.exist_limits(On_SHPP_KPA_current_limits[0][0], 'hi', prec1), precision = prec1 )
+		 
+	% забор значения допустимых значений токов для вкл ТМИ
+		 %% set text_limits_On_SHPP_TM_current = h.exist_result(h.exist_limits(On_SHPP_TM_current_limits[0][0], 'comp')) + h.exist_result(h.exist_limits(On_SHPP_TM_current_limits[0][0], 'lo', prec1), precision = prec1)
+		 
+	% сбор допустимых значений напряжений для КПА
+		 %% set text_limits_On_KSU_KPA_voltage = h.exist_result(h.exist_limits(On_KSU_KPA_voltage_limits[0][0], 'comp'))  + h.exist_result(h.exist_limits(On_KSU_KPA_voltage_limits[0][0], 'lo', prec), precision = prec1) 
+		 
+	% сбор допустимых значений напряжений для ТМИ
+		 %% set text_limits_On_KSU_TM_voltage = h.exist_result(h.exist_limits(On_KSU_TM_voltage_limits[0][0], 'comp')) + h.exist_result(h.exist_limits(On_KSU_TM_voltage_limits[0][0], 'lo', prec), precision = prec1)
+		 
+	\vspace{-0.8em}
+	\begin{longtable}{|C{19mm}|C{30mm}|C{29mm}|C{19mm}|C{29mm}|C{28mm}|}
+	\caption{Значение токов и напряжений на линиях ШПП и КСУ соответственно} \tabularnewline  \hline 
+	Шина № & Ток на КПА\\(\VAR{text_limits_On_SHPP_KPA_current}(А)) & Ток на ТМИ \\( \VAR{text_limits_On_SHPP_TM_current} (А) ) & Канал № & Напряжение на КПА \\( \VAR{text_limits_On_KSU_KPA_voltage} (В) ) & Напряжение на ТМИ \\( \VAR{text_limits_On_KSU_TM_voltage}  (В) ) \tabularnewline \hline 	
+	\endfirsthead  
+	\multicolumn{6}{l} {\tablename\ \thetable\ -- {Продолжение}} \tabularnewline \hline  
+	Шина № & Ток на КПА\\(\VAR{text_limits_On_SHPP_KPA_current}(А)) & Ток на ТМИ \\( \VAR{text_limits_On_SHPP_TM_current} (А) ) & Канал № & Напряжение на КПА \\( \VAR{text_limits_On_KSU_KPA_voltage} (В) ) & Напряжение на ТМИ \\( \VAR{text_limits_On_KSU_TM_voltage}  (В) ) \tabularnewline \hline 	
+	 \endhead 
+	 
+	 
+	 %% for test in range(On_KSU_KPA_voltage_limits|length)
+	 
+	 % при ВКЛ КСУ по КПА
+	 	%% set On_KSU_KPA_voltage_temp = h.formatting_float_number(On_KSU_KPA_voltage_limits[test][0]['result'], precision = prec1)
+	 	%% if On_KSU_KPA_voltage_limits[test][0]['status'] != ' '
+	 		%% set On_KSU_KPA_voltage = '\\colorbox{red}{'+ On_KSU_KPA_voltage_temp +'}'
+	 	%% else
+	 		%% set On_KSU_KPA_voltage = On_KSU_KPA_voltage_temp
+	 	%% endif
+	 	
+	 % при ВКЛ по ТМ	 
+	 	%% set On_KSU_TM_voltage_temp = h.formatting_float_number(On_KSU_TM_voltage_limits[test][0]['result'], precision = prec1)
+	 	%% if On_KSU_TM_voltage_limits[test][0]['status'] != ' '
+	 		%% set On_KSU_TM_voltage = '\\colorbox{red}{'+ On_KSU_TM_voltage_temp +'}'
+	 	%% else
+	 		%% set On_KSU_TM_voltage = On_KSU_TM_voltage_temp
+	 	%% endif
+	 	
+	 % тест ШПП имеет только 24 шины
+	 %% if test < 24
+		 % при ВКЛ КПА
+			 %% set On_SHPP_KPA_current_temp = h.formatting_float_number(On_SHPP_KPA_current_limits[test][0]['result'], precision = prec1)
+			 %% if On_SHPP_KPA_current_limits[test][0]['status'] != ' '
+			 	%% set On_SHPP_KPA_current = '\\colorbox{red}{'+ On_SHPP_KPA_current_temp +'}'
+			 %% else
+			 	%% set On_SHPP_KPA_current = On_SHPP_KPA_current_temp
+			 %% endif
+			 
+		% при ВКЛ ТМ	 
+			 %% set On_SHPP_TM_current_temp = h.formatting_float_number(On_SHPP_TM_current_limits[test][0]['result'], precision = prec1)
+			 %% if On_SHPP_TM_current_limits[test][0]['status'] != ' '
+			 	%% set On_SHPP_TM_current = '\\colorbox{red}{'+ On_SHPP_TM_current_temp +'}'
+			 %% else
+			 	%% set On_SHPP_TM_current = On_SHPP_TM_current_temp
+			 %% endif
+		ШПП\VAR{test + 1} & \VAR{On_SHPP_KPA_current} &  \VAR{On_SHPP_TM_current} & КСУ\VAR{test + 1}& \VAR{On_KSU_KPA_voltage} &  \VAR{On_KSU_TM_voltage} \tabularnewline \hline
+	%% else
+			--- & --- & --- & КСУ\VAR{test + 1}& \VAR{On_KSU_KPA_voltage} &  \VAR{On_KSU_TM_voltage} \tabularnewline \hline
+	%% endif
+	%% endfor
+	
+	\end{longtable}
+	\vspace{-0.8em}
+	
+	%% for test in range(Off_SHPP_TM_current_limits|length)
+		% при ВЫКЛ КПА	 
+		%% if Off_SHPP_KPA_current_limits[test][0]['status'] != ' '
+			%% set Off_SHPP_KPA_current = h.formatting_float_number(Off_SHPP_KPA_current_limits[test][0]['result'], precision = prec1)
+			При выключении \colorbox{red}{ШПП\VAR{test + 1}} произошла ошибка при измерении тока \colorbox{red}{КПА} \VAR{Off_SHPP_KPA_current} (А).
+		
+		%% endif
+		
+		% при ВЫКЛ ТМ		
+		%% if Off_SHPP_TM_current_limits[test][0]['status'] != ' '
+			%% set Off_SHPP_TM_current = h.formatting_float_number(Off_SHPP_TM_current_limits[test][0]['result'], precision = prec1)
+			При выключении ШПП\VAR{test + 1} произошла ошибка при измерении тока \colorbox{red}{ТМИ} \VAR{Off_SHPP_TM_current} (А).
+			
+		%% endif
+	%% endfor
+
+		% если была лишь 1 ошибка - выведет единожды
+		%%  if On_SHPP_TM_voltage_exists|length == 1
+			Ошибка при включении ТМИ на шине \colorbox{red}{\VAR{On_SHPP_TM_voltage_exists[0]}}.
+		% иначе - выведет все ошибки через запятую. Когда достигнет конца списка - поставит точку
+		%% elif On_SHPP_TM_voltage_exists|length > 1
+			Ошибки при включении ТМИ на шинах 
+			%% for i in range(On_SHPP_TM_voltage_exists|length)
+			\colorbox{red}{\VAR{On_SHPP_TM_voltage_exists[i]}}
+			%% print([", ", ". "] [i == On_SHPP_TM_voltage_exists|length - 1])
+			%% endfor
+		%% endif
+		
+		% если была лишь 1 ошибка - выведет единожды
+		%% if Off_SHPP_TM_voltage_exists|length == 1
+			Ошибка при выключении ТМИ на шине \colorbox{red}{\VAR{Off_SHPP_TM_voltage_exists[0]}}.
+		% иначе - выведет все ошибки через запятую. Когда достигнет конца списка - поставит точку
+		%% elif Off_SHPP_TM_voltage_exists|length > 1
+			Ошибки при выключении ТМИ на шинах 
+			%% for i in range(Off_SHPP_TM_voltage_exists|length)
+			\colorbox{red}{\VAR{Off_SHPP_TM_voltage_exists[i]}}
+			%% print([", ", ". "] [i == Off_SHPP_TM_voltage_exists|length - 1])
+			%% endfor
+		%% endif
+		
+	%% for test in range(Off_SHPP_TM_current_limits|length)
+		% при ВЫКЛ КПА	 
+			%% if Off_KSU_KPA_voltage_limits[test][0]['status'] != ' '
+			%% set Off_SHPP_KPA_current = h.formatting_float_number(Off_KSU_KPA_voltage_limits[test][0]['result'], precision = prec1)
+			При выключении канала \colorbox{red}{\VAR{test + 1}} произошла ошибка при измерении напряжения \colorbox{red}{КПА} \VAR{Off_SHPP_KPA_current} (В).
+		
+		%% endif
+		
+		% при ВЫКЛ ТМ		
+		%% if Off_KSU_TM_voltage_limits[test][0]['status'] != ' '
+			%% set Off_SHPP_TM_current = h.formatting_float_number(Off_KSU_TM_voltage_limits[test][0]['result'], precision = prec1)
+			При выключении канала \colorbox{red}{\VAR{test + 1}} произошла ошибка при измерении напряжения \colorbox{red}{ТМИ} \VAR{Off_SHPP_TM_current} (В).
+		
+		
+		%% endif
+	%% endfor
+
+%% endif
+
+\vspace{0.5em}

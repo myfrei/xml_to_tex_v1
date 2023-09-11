@@ -1,11 +1,10 @@
-import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog
-import xml.etree.ElementTree as ET
 import os
-from bs4 import BeautifulSoup
-import random
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import ttk
 from tkinter.simpledialog import askstring
+
+from bs4 import BeautifulSoup
 
 
 class Application(tk.Tk):
@@ -13,7 +12,7 @@ class Application(tk.Tk):
         super().__init__()
 
         self.title("XML to TEX converter")
-        self.geometry("740x680")
+        self.geometry("800x700")
         self.resizable(True, True)
 
         self.style = ttk.Style()
@@ -153,7 +152,6 @@ class Application(tk.Tk):
                     main_tab.pack(fill='both', expand=True)
 
                     frame_for_btn = ttk.Frame(main_tab)
-                    # frame_for_btn.grid(row=0,column=0,pady=(5, 20), sticky='w')
                     frame_for_btn.pack(pady=(5, 20))
 
                     canvas = tk.Canvas(frame_for_btn, height=30, width=1920)
@@ -165,17 +163,10 @@ class Application(tk.Tk):
                     button_frame = tk.Frame(canvas)
                     canvas.create_window((0, 0), window=button_frame, anchor="nw")
 
-                    # frame_for_treeview.grid(row=1,column=0,pady=(100, 20), sticky='nsew')
-                    # if counter == 1:
-                    global frame_for_treeview
-                    # frame_for_treeview = ttk.Frame(self.results_notebook)  test_group_tab
+                    global frame_for_treeview, name_or_callerName
                     frame_for_treeview = ttk.Frame(main_tab)
 
-                    frame_for_treeview.pack(pady=(10, 20), fill='both', expand=True)
-
-                    # global notebook_2
-                    # notebook_2 = ttk.Notebook(button_frame)
-                    # notebook_2.pack(fill='both', expand=True)
+                    frame_for_treeview.pack(pady=(10, 15), fill='both', expand=True)
 
                     global x_max
                     x_max = 100
@@ -185,36 +176,14 @@ class Application(tk.Tk):
                         x_max += wid * 2
                         canvas.configure(scrollregion=(0, 0, x_max, 0))
 
-                    ## ADDDDD
-
-                    # for a in range(50):
-                    #     # button = ttk.Button(button_frame, text=f"Button {a + 1}")
-                    #     # button.pack(side='left', padx=2)
-                    #     new_tab = ttk.Frame(notebook_2, width=50)
-                    #     notebook_2.add(new_tab, text=f"Tab {a}")
-                    #     update_width_scrollbar(new_tab.winfo_reqwidth())
-                    #     # x_max +=new_tab.winfo_reqwidth()
-                    #     # canvas.configure(scrollregion=(0,0,x_max,0))
-
-                    #### ADDD
-
                     # Привяжите xscrollbar к холсту
                     canvas.configure(xscrollcommand=scrollbar.set)
 
-                    # def configure_xscrollbar(event):
-                    #     canvas.configure(scrollregion=(0,0,2000,0))
-
-                    # canvas.bind("<Configure>", configure_xscrollbar)
-
-                    # tab_for_treeview = ttk.Frame(main_tab)
-                    # tab_for_treeview.grid(row=1,column=0, sticky='sew',padx=20)
-                    # tab_for_treeview.pack(fill="both", expand=True)
-
-                    width_const = 3.45
+                    width_const = 3.40
                     if not isinstance(i, str):
                         for h, child in enumerate(i.children):
                             if child.name == 'tr:test' or child.name == 'tr:testgroup':
-                                if child.name == 'tr:testgroup':
+                                if child.name == 'tr:testgroup' or child.name == 'tr:sessionaction':
                                     try:
                                         name2 = child.attrs['callername']
                                         # treeview.insert("", "end", values=(name2, child.find('tr:outcome')['qualifier'], 'None'))
@@ -251,7 +220,7 @@ class Application(tk.Tk):
                                         treeview.heading("Dop", text="Допустимое значение")
                                         treeview.heading("String", text="String")
                                         treeview.insert("", "end", values=(
-                                        name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
+                                            name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
                                         list_treeview.append(treeview)
 
                                         button = ttk.Button(button_frame, text=name2,
@@ -297,7 +266,7 @@ class Application(tk.Tk):
                                         treeview.heading("String", text="String")
 
                                         treeview.insert("", "end", values=(
-                                        name2, child.find('tr:outcome')['value'], 'None', '-', string_val))
+                                            name2, child.find('tr:outcome')['value'], 'None', '-', string_val))
                                         list_treeview.append(treeview)
 
                                         # new_tab = ttk.Frame(notebook_2, width=50)
@@ -350,8 +319,8 @@ class Application(tk.Tk):
                                             treeview.heading("String", text="String")
 
                                             treeview.insert("", "end", values=(
-                                            name2, child.find('tr:outcome')['qualifier'],
-                                            child.find('c:datum').find('value'), '-', string_val))
+                                                name2, child.find('tr:outcome')['qualifier'],
+                                                child.find('c:datum').find('value'), '-', string_val))
                                             list_treeview.append(treeview)
                                             # new_tab = ttk.Frame(notebook_2, width=50)
                                             # notebook_2.add(new_tab, text=name2)
@@ -400,7 +369,7 @@ class Application(tk.Tk):
                                         treeview.heading("String", text="String")
 
                                         treeview.insert("", "end", values=(
-                                        name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
+                                            name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
                                         list_treeview.append(treeview)
 
                                         # new_tab = ttk.Frame(notebook_2, width=50)
@@ -504,7 +473,7 @@ class Application(tk.Tk):
                                         treeview.heading("String", text="String")
 
                                         treeview.insert("", "end", values=(
-                                        name2, child.find('tr:outcome')['value'], 'None', '-', string_val))
+                                            name2, child.find('tr:outcome')['value'], 'None', '-', string_val))
                                         list_treeview.append(treeview)
 
                                         # new_tab = ttk.Frame(notebook_2, width=50)
@@ -515,7 +484,7 @@ class Application(tk.Tk):
 
                             if not isinstance(child, str):
                                 for child2 in child.children:
-                                    if child2.name == 'tr:test' or child2.name == 'tr:testgroup':
+                                    if child2.name == 'tr:test' or child2.name == 'tr:testgroup' or child2.name == 'tr:tr:sessionaction':
                                         GE = None
                                         LE = None
                                         val = None
@@ -537,10 +506,10 @@ class Application(tk.Tk):
                                             except:
                                                 pass
 
-                                            treeview.insert("", "end", values=(f"            {child2.attrs['name']}",
+                                            treeview.insert("", "end", values=(f"{child2.attrs['callerName']}",
                                                                                child.find('tr:outcome')['qualifier'],
                                                                                val, f'{GE} ÷ {LE}', string_val))
-                                            tex_str += f"            {child2.attrs['name']}  {child.find('tr:outcome')['qualifier']}  {GE} < {val} < {LE}\n"
+                                            tex_str += f"{child2.attrs['callerName']}  {child.find('tr:outcome')['qualifier']}  {GE} < {val} < {LE}\n"
                                             # print('\n        ',child2.attrs['name'], ' - ', child2.find('tr:outcome')['qualifier'], f'  GE = {GE}  val = {val}  LE = {LE}' ,'\n')
                                         except:
                                             if GE and LE:
@@ -552,9 +521,11 @@ class Application(tk.Tk):
                                                         string_val = " - "
                                                 except:
                                                     pass
+                                                name_or_callerName = child2.attrs.get('callerName',
+                                                                                      child2.attrs.get('name', ''))
                                                 treeview.insert("", "end", values=(
-                                                f"            {child2.attrs['name']}",
-                                                child.find('tr:outcome')['value'], val, f'{GE} ÷ {LE}', string_val))
+                                                    f"            {name_or_callerName}",
+                                                    child.find('tr:outcome')['value'], val, f'{GE} ÷ {LE}', string_val))
                                                 tex_str += f"            {child2.attrs['name']}  {child.find('tr:outcome')['value']}  {GE} < {val} < {LE}\n"
                                                 # print('\n        ',child2.attrs['name'], ' - ', child2.find('tr:outcome')['value'], f'  {GE} < {val} < {LE}' ,'\n')
                                             else:
@@ -584,9 +555,9 @@ class Application(tk.Tk):
                                                 except:
                                                     pass
                                                 treeview.insert("", "end", values=(
-                                                f"            {child2.attrs['name']}",
-                                                child.find('tr:outcome')['value'], val, '-', string_val))
-                                                tex_str += f"            {child2.attrs['name']}  {child.find('tr:outcome')['value']}  {val}\n"
+                                                    f"  {name_or_callerName}",
+                                                    child.find('tr:outcome')['value'], val, '-', string_val))
+                                                tex_str += f"  {name_or_callerName}  {child.find('tr:outcome')['value']}  {val}\n"
                                             # print('\n        ',child2.attrs['name'], ' - ', child2.find('tr:outcome')['value'], f'  {val}' ,'\n')
 
                     # treeview.insert("", "end", values=(name, status, value))
@@ -643,17 +614,35 @@ class Application(tk.Tk):
                 tree.item(item, values=values)
 
     def parse_treeview_data(self, list_tr, main_name):
+        # Инициализируем переменную для хранения прочитанного содержимого шаблона
+        template_content = ""
+
+        # Читаем содержимое файла Test3.tex
+        try:
+            with open("tamplete/Test3.tex", "r", encoding="utf-8") as template_file:
+                template_content = template_file.read()
+        except Exception as e:
+            print(f"Не удалось прочитать файл шаблона: {e}")
+
+        # Инициализируем переменную для хранения основных данных
         parsed_data = ""
+
+        # Обрабатываем дерево
         for tree in list_tr:
             for item in tree.get_children():
                 values = tree.item(item, "values")
                 test, status, value, dop, string = values
                 parsed_data += f"{test}   {status}   {value}   {dop}   {string}\n"
-        # print(main_name)
-        # print(parsed_data)
-        # file_name = self.text_str_db[idx].split()
-        with open(f"{main_name}.tex", "w", encoding="utf-8") as tex_file:
-            tex_file.write(parsed_data)
+
+        # Записываем все данные в файл
+        try:
+            with open(f"{main_name}.tex", "w", encoding="utf-8") as tex_file:
+                # Записываем содержимое шаблона в начало файла
+                tex_file.write(template_content)
+                # Записываем основные данные
+                tex_file.write(parsed_data)
+        except Exception as e:
+            print(f"Не удалось записать в файл: {e}")
 
     def update_frame(self, idx):
         print(idx)
@@ -669,32 +658,29 @@ class Application(tk.Tk):
             self.current_frame = selected_frame
 
     def generate_tex_file(self, idx):
+        try:
+            # Чтение шаблонного файла
+            with open("tamplete/Test3.tex", "r") as template_file:
+                template_content = template_file.read()
+                print(
+                    f"Successfully read the template file. Content: {template_content[:50]}...")  # Выводим первые 50 символов
+        except Exception as e:
+            print(f"Error reading the template file: {e}")
+            template_content = ""
+
+        # Создание имени файла на основе индекса (хотя это значение не используется в оригинальной версии)
         file_name = self.text_str_db[idx].split()
-        with open(f"{idx}.tex", "w") as tex_file:
-            tex_file.write(self.text_str_db[idx])
-        # selected_test_cases = []
 
-        # for test_group_tab in self.result_tabs:
-        #     treeview = test_group_tab.winfo_children()[0]
-        #     items = treeview.get_children()
-
-        #     for item in items:
-        #         values = treeview.item(item, "values")
-        #         test_case = values[0]  # Test Case name
-        #         selected_test_cases.append(test_case)
-
-        # if selected_test_cases:
-        #     file_path = filedialog.asksaveasfilename(defaultextension=".tex", filetypes=[("TeX Files", "*.tex")])
-
-        #     if file_path:
-        #         with open(file_path, "w") as file:
-        #             file.write("\\documentclass{article}\n")
-        #             file.write("\\begin{document}\n")
-
-        #             for test_case in selected_test_cases:
-        #                 file.write(f"Selected Test Case: {test_case}\n")
-
-        #             file.write("\\end{document}")
+        try:
+            # Запись в целевой файл
+            with open(f"{idx}.tex", "w") as tex_file:
+                # Запись содержимого шаблонного файла
+                tex_file.write(template_content)
+                # Запись основного содержимого
+                tex_file.write(self.text_str_db[idx])
+                print(f"Successfully wrote to {idx}.tex")  # Уведомление об успешной записи
+        except Exception as e:
+            print(f"Error writing to the target file: {e}")
 
     def clear_result_tabs(self):
         for tab in self.result_tabs:
@@ -725,7 +711,3 @@ class Application(tk.Tk):
 if __name__ == "__main__":
     app = Application()
     app.mainloop()
-
-# new_tab = ttk.Frame(notebook_2, width=50)
-# notebook_2.add(new_tab, text=f"Tab {a}")
-# update_width_scrollbar(new_tab.winfo_reqwidth())
