@@ -183,11 +183,12 @@ class Application(tk.Tk):
                     if not isinstance(i, str):
                         for h, child in enumerate(i.children):
                             if child.name == 'tr:test' or child.name == 'tr:testgroup':
-                                if child.name == 'tr:testgroup' or child.name == 'tr:sessionaction':
+                                if child.name == 'tr:testgroup':
                                     try:
                                         name2 = child.attrs['callername']
                                         # treeview.insert("", "end", values=(name2, child.find('tr:outcome')['qualifier'], 'None'))
-                                        tex_str += f"{name2}  {child.find('tr:outcome')['qualifier']}  None\n"
+                                        # Дуюлирование названия главного поддтеста
+                                        #tex_str += f"{name2}  {child.find('tr:outcome')['qualifier']}  None\n"
 
                                         # notebook_2.add(new_tab, text=name2)
                                         # update_width_scrollbar(len(name2)*width_const)
@@ -219,8 +220,9 @@ class Application(tk.Tk):
                                         treeview.heading("Value", text="Значение")
                                         treeview.heading("Dop", text="Допустимое значение")
                                         treeview.heading("String", text="String")
-                                        treeview.insert("", "end", values=(
-                                            name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
+                                        # Дуюлирование названия главного поддтеста
+                                        #treeview.insert("", "end", values=(
+                                        #    name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
                                         list_treeview.append(treeview)
 
                                         button = ttk.Button(button_frame, text=name2,
@@ -231,7 +233,8 @@ class Application(tk.Tk):
                                     except:
                                         name2 = child.attrs['callername']
                                         # treeview.insert("", "end", values=(name2, child.find('tr:outcome')['value'], 'None'))
-                                        tex_str += f"{name2}  {child.find('tr:outcome')['value']}  None\n"
+                                        # Дуюлирование названия главного поддтеста
+                                        #tex_str += f"{name2}  {child.find('tr:outcome')['value']}  None\n"
                                         new_tab = ttk.Frame(frame_for_treeview)
                                         self.cnt_frame += 1
                                         self.dict_of_frame[self.cnt_frame] = new_tab
@@ -265,8 +268,10 @@ class Application(tk.Tk):
                                         treeview.heading("Dop", text="Допустимое значение")
                                         treeview.heading("String", text="String")
 
-                                        treeview.insert("", "end", values=(
-                                            name2, child.find('tr:outcome')['value'], 'None', '-', string_val))
+                                        #Дуюлирование названия главного поддтеста
+                                        # treeview.insert("", "end", values=(
+                                        #     name2, child.find('tr:outcome')['value'], 'None', '-', string_val))
+
                                         list_treeview.append(treeview)
 
                                         # new_tab = ttk.Frame(notebook_2, width=50)
@@ -333,7 +338,8 @@ class Application(tk.Tk):
                                         except:
                                             name2 = child.attrs['name']
                                         # treeview.insert("", "end", values=(name2, child.find('tr:outcome')['qualifier'], 'None'))
-                                        tex_str += f"{name2}  {child.find('tr:outcome')['qualifier']}  None\n"
+                                        # Дуюлирование названия главного поддтеста
+                                        #tex_str += f"{name2}  {child.find('tr:outcome')['qualifier']}  None\n"
                                         new_tab = ttk.Frame(frame_for_treeview)
                                         self.cnt_frame += 1
                                         self.dict_of_frame[self.cnt_frame] = new_tab
@@ -367,9 +373,9 @@ class Application(tk.Tk):
                                         treeview.heading("Value", text="Значение")
                                         treeview.heading("Dop", text="Допустимое значение")
                                         treeview.heading("String", text="String")
-
-                                        treeview.insert("", "end", values=(
-                                            name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
+                                        #Дублирование
+                                        #treeview.insert("", "end", values=(
+                                        #    name2, child.find('tr:outcome')['qualifier'], 'None', '-', string_val))
                                         list_treeview.append(treeview)
 
                                         # new_tab = ttk.Frame(notebook_2, width=50)
@@ -421,10 +427,10 @@ class Application(tk.Tk):
                                             treeview.heading("Value", text="Значение")
                                             treeview.heading("Dop", text="Допустимое значение")
                                             treeview.heading("String", text="String")
-
-                                            treeview.insert("", "end", values=(name2, child.find('tr:outcome')['value'],
-                                                                               child.find('c:datum').find('value'), '-',
-                                                                               string_val))
+                                            #Первая строчка
+                                            # treeview.insert("", "end", values=(name2, child.find('tr:outcome')['value'],
+                                            #                                    child.find('c:datum').find('value'), '-',
+                                            #                                    string_val))
                                             list_treeview.append(treeview)
                                         #  new_tab = ttk.Frame(notebook_2, width=50)
                                         # notebook_2.add(new_tab, text=name2)
@@ -437,7 +443,8 @@ class Application(tk.Tk):
                                         except:
                                             name2 = child.attrs['name']
                                         # treeview.insert("", "end", values=(name2, child.find('tr:outcome')['value'], 'None'))
-                                        tex_str += f"{name2}  {child.find('tr:outcome')['value']}  None\n"
+                                        #Дублирование
+                                        #tex_str += f"{name2}  {child.find('tr:outcome')['value']}  None\n"
                                         new_tab = ttk.Frame(frame_for_treeview)
                                         self.cnt_frame += 1
                                         self.dict_of_frame[self.cnt_frame] = new_tab
@@ -484,7 +491,7 @@ class Application(tk.Tk):
 
                             if not isinstance(child, str):
                                 for child2 in child.children:
-                                    if child2.name == 'tr:test' or child2.name == 'tr:testgroup' or child2.name == 'tr:tr:sessionaction':
+                                    if child2.name == 'tr:test' or child2.name == 'tr:testgroup':
                                         GE = None
                                         LE = None
                                         val = None
@@ -524,9 +531,9 @@ class Application(tk.Tk):
                                                 name_or_callerName = child2.attrs.get('callerName',
                                                                                       child2.attrs.get('name', ''))
                                                 treeview.insert("", "end", values=(
-                                                    f"            {name_or_callerName}",
+                                                    f"  {name_or_callerName}",
                                                     child.find('tr:outcome')['value'], val, f'{GE} ÷ {LE}', string_val))
-                                                tex_str += f"            {child2.attrs['name']}  {child.find('tr:outcome')['value']}  {GE} < {val} < {LE}\n"
+                                                tex_str += f"  {name_or_callerName}  {child.find('tr:outcome')['value']}  {GE} < {val} < {LE}\n"
                                                 # print('\n        ',child2.attrs['name'], ' - ', child2.find('tr:outcome')['value'], f'  {GE} < {val} < {LE}' ,'\n')
                                             else:
                                                 # try:
