@@ -5,6 +5,7 @@ from tkinter import filedialog
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageTk
 from ttkthemes import ThemedTk  # Убедитесь, что этот импорт присутствует
+from tkinter import YES, BOTH
 
 
 class StartFrame(ttk.Frame):
@@ -108,52 +109,34 @@ class XMLApp:
         #self.menu.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Open", command=self.load_xml)
 
-    def start_analysis(self, file_path):
-        result_window = tk.Toplevel(self.root)
-        result_window.title("Result")
-        tab_control = ttk.Notebook(result_window)
-        tab_control.pack(expand=tk.YES, fill=tk.BOTH)
-        self.load_xml(file_path, tab_control)
-
-    def load_xml(self, file_path, tab_control):
+    def load_xml(self, root, tab_control):
         namespaces = {
-            'trc': 'urn:IEEE-1636.1:2011:01:TestResultsCollection',
-            'tr': 'urn:IEEE-1636.1:2011:01:TestResults',
-            'c': 'urn:IEEE-1671:2010:Common',
-            'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-            'ts': 'www.ni.com/TestStand/ATMLTestResults/2.0'
+            'tr': 'urn:IEEE-1636.1:2011:01:TestResults'
         }
-        if not file_path:
-            file_path = filedialog.askopenfilename(filetypes=[("XML files", "*.xml")])
-            if not file_path:
-                print("No file selected.")
-                return
-            print(f"Selected file: {file_path}")
-
-        try:
-            tree = ET.parse(file_path)
-            root = tree.getroot()
-        except Exception as e:
-            print(f"Failed to parse XML: {e}")
-            return
 
         for elem in root.findall(".//tr:ResultSet", namespaces=namespaces):
-            self.add_tab(elem, "Result", 1, tab_control)  # Здесь создается новая вкладка с именем "Result"
+            for child in elem.findall("./tr:TestGroup | ./tr:Test", namespaces=namespaces):
+                tab_name = child.get('callerName', child.get('name', 'Unknown'))
+                self.add_tab(child, tab_name, tab_control)
 
-    def add_tab(self, elem, name, level, tab_control):
-        frame = ttk.Frame(tab_control)
-        tab_control.add(frame, text=name)
+    def populate_tree(self, tree, elem, parent=""):
+        name = elem.tag.split('}')[-1]
+        value = elem.text.strip() if elem.text else "N/A"
+        id = tree.insert(parent, tk.END, text=name, values=(value,))
+        for child in elem:
+            self.populate_tree(tree, child, id)
 
-        tree = ttk.Treeview(frame)
-        tree["columns"] = ("Value",)
-        tree.column("#0", width=150)
-        tree.column("Value", width=100)
-        tree.heading("#0", text="Name")
+    def add_tab(self, elem, name, tab_control):
+        tab = ttk.Frame(tab_control)
+        tab_control.add(tab, text=name)
+
+        tree = ttk.Treeview(tab, columns=("Value",), show="tree headings")
+        tree.column("#0", width=200)
+        tree.column("Value", width=200)
         tree.heading("Value", text="Value")
+        tree.pack(fill='both', expand=True)
 
         self.populate_tree(tree, elem)
-
-        tree.pack(expand=tk.YES, fill=tk.BOTH)
 
     def populate_tree(self, tree, elem, parent="", level=1):
         for child in elem:
@@ -166,6 +149,73 @@ class XMLApp:
             id = tree.insert(parent, tk.END, text=name, values=(value,))
             self.populate_tree(tree, child, id, level + 1)
 
+    def start_analysis(self, file_path):
+        result_window = tk.Toplevel(self.root)
+        result_window.title("Result")
+
+        tab_control = ttk.Notebook(result_window)
+        tab_control.pack(expand=tk.YES, fill=tk.BOTH)
+
+        if not file_path:
+            print("No file selected.")
+            return
+
+        try:
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+        except Exception as e:
+            print(f"Failed to parse XML: {e}")
+            return
+
+        #self.add_tree_tab(root, "Full Tree", tab_control)  # Здесь создается вкладка с полным деревом
+        self.add_tabs_from_xml(root, tab_control)
+
+    def add_tabs_from_xml(self, xml_root, tab_control):
+        namespaces = {'tr': 'urn:IEEE-1636.1:2011:01:TestResults'}
+
+        for elem in xml_root.findall('.//tr:ResultSet', namespaces=namespaces):
+            for child in elem.findall('./*', namespaces=namespaces):
+                tag = child.tag.split('}')[-1]
+                if tag in ['TestGroup', 'Test']:
+                    name = child.get('callerName', child.get('name', 'Unknown'))
+                    if name == "Unknown":
+                        continue
+                    self.add_tree_tab(child, name, tab_control)
+
+    def add_tree_tab(self, xml_element, tab_name, tab_control):
+        # Создаем Frame для каждой вкладки
+        frame = ttk.Frame(tab_control)
+        tab_control.add(frame, text=tab_name)
+
+        # Добавляем Treeview в каждую вкладку
+        tree = ttk.Treeview(frame)
+        tree.pack(expand=YES, fill=BOTH)
+
+        # Добавляем столбцы
+        tree["columns"] = ("one", "two")
+        tree.column("#0", width=270, minwidth=270)
+        tree.column("one", width=150, minwidth=150)
+        tree.column("two", width=400, minwidth=200)
+        tree.heading("#0", text="Name")
+        tree.heading("one", text="Attribute")
+        tree.heading("two", text="Value")
+
+        # Добавляем информацию из XML элемента в Treeview
+        self.populate_tree(tree, xml_element)
+
+    def populate_full_tree(self, tree, elem, parent="", level=1):
+        name = elem.tag
+        value = elem.text.strip() if elem.text else "N/A"
+        namespaces = {'tr': 'urn:IEEE-1636.1:2011:01:TestResults'}
+
+        # Если элемент является tr:TestGroup или tr:Test, или является их потомком
+        if 'TestGroup' in name or 'Test' in name or parent:
+            # Добавляем текущий элемент как узел в дерево
+            id = tree.insert(parent, tk.END, text=name, values=(value,))
+
+            # Рекурсивно обходим дочерние элементы
+            for child in elem.findall(".//*", namespaces=namespaces):
+                self.populate_full_tree(tree, child, id, level + 1)
 
 class Switch(tk.Canvas):
     def __init__(self, parent, *args, **kwargs):
