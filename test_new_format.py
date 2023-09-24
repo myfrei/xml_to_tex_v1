@@ -4,6 +4,8 @@ from tkinter import ttk
 from tkinter import filedialog
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageTk
+from ttkthemes import ThemedTk  # Убедитесь, что этот импорт присутствует
+
 
 class StartFrame(ttk.Frame):
     def __init__(self, container, controller, *args, **kwargs):
@@ -17,12 +19,14 @@ class StartFrame(ttk.Frame):
         ttk.Label(self, image=self.logo).pack(side="right", padx=10)
 
         self.use_custom_dir = tk.BooleanVar(value=False)
-        ttk.Checkbutton(self, text="Choose directory", variable=self.use_custom_dir,
-                        command=self.toggle_dir_choice).pack(anchor=tk.W, pady=5)
+
+        self.switch = Switch(self)
+        self.switch.pack(anchor=tk.W, pady=5)
+        self.switch.bind('<<SwitchToggled>>', lambda e: self.toggle_dir_choice())
 
         self.dir_entry = ttk.Entry(self, state='disabled')
         self.dir_entry.pack(fill=tk.X, padx=5, pady=5)
-        self.dir_button = ttk.Button(self, text="Choose Directory", command=self.choose_directory, state='disabled')
+        self.dir_button = ttk.Button(self, text="Выбрать папку", command=self.choose_directory, state='disabled')
         self.dir_button.pack(pady=5)
 
         self.file_listbox = tk.Listbox(self)
@@ -33,7 +37,7 @@ class StartFrame(ttk.Frame):
         self.populate_file_list(os.path.dirname(os.path.abspath(__file__)))
 
     def toggle_dir_choice(self):
-        if self.use_custom_dir.get():
+        if self.switch.is_on:  # Используйте свойство is_on нового виджета Switch
             self.dir_entry.config(state='normal')
             self.dir_button.config(state='normal')
         else:
@@ -74,10 +78,17 @@ class StartFrame(ttk.Frame):
 class XMLApp:
     def __init__(self, root):
         self.root = root
+        available_themes = self.root.get_themes()  # Получить доступные темы
+        print("Available themes: ", available_themes)  # Вывести список доступных тем
+        if 'breeze' in available_themes:
+            self.root.set_theme("breeze")  # Применение темы , если она доступна
+        else:
+            print("Theme 'azure' is not available. Please select another theme.")
+
         self.root.title("XML Viewer")
         self.root.geometry("800x600")  # Установите размер окна
         self.root.resizable(False, False)  # Запретить изменение размера окна
-        self.init_ui()
+        self.init_ui()  # Вызов метода init_ui
 
     def init_ui(self):
         self.start_frame = StartFrame(self.root, self)
@@ -149,8 +160,35 @@ class XMLApp:
             self.populate_tree(tree, child, id, level + 1)
 
 
+class Switch(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+
+        self._variable = tk.BooleanVar(value=False)
+
+        self._off_button = ttk.Button(self, text='Off', command=self._toggle)
+        self._off_button.pack(side='left', fill='x', expand=True)
+
+        self._on_button = ttk.Button(self, text='On', command=self._toggle)
+        self._on_button.pack(side='left', fill='x', expand=True)
+
+    def _toggle(self):
+        self._variable.set(not self._variable.get())
+        self._trigger_event()
+
+    def _trigger_event(self):
+        self.event_generate('<<SwitchToggled>>')
+
+    @property
+    def is_on(self):
+        return self._variable.get()
+
+    def set_state(self, state):
+        self._variable.set(state)
+
+
 def main():
-    root = tk.Tk()
+    root = ThemedTk()  # Используем ThemedTk вместо стандартного Tk
     app = XMLApp(root)
     root.mainloop()
 
