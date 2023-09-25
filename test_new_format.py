@@ -88,8 +88,8 @@ class XMLApp:
         self.root = root
         available_themes = self.root.get_themes()  # Получить доступные темы
         print("Available themes: ", available_themes)  # Вывести список доступных тем
-        if 'scidsand' in available_themes:
-            self.root.set_theme("scidsand")  # Применение темы , если она доступна
+        if 'plastik' in available_themes:
+            self.root.set_theme("plastik")  # Применение темы , если она доступна
         else:
             print("Theme 'azure' is not available. Please select another theme.")
 
@@ -153,7 +153,7 @@ class XMLApp:
         result_window = tk.Toplevel(self.root)
         result_window.title("Result")
 
-        tab_control = ttk.Notebook(result_window)
+        tab_control = ScrollableNotebook(result_window)
         tab_control.pack(expand=tk.YES, fill=tk.BOTH)
 
         if not file_path:
@@ -180,8 +180,19 @@ class XMLApp:
                     name = child.get('callerName', child.get('name', 'Unknown'))
                     if name == "Unknown":
                         continue
-                    self.add_tree_tab(child, name, tab_control)
+                    # Вместо добавления вкладки дерева добавляем вкладку Notebook
+                    self.add_notebook_tab(child, name, tab_control)
 
+    def add_notebook_tab(self, xml_element, tab_name, tab_control):
+        # Создаем новый ttk.Notebook для каждой вкладки
+        sub_tab_control = ttk.Notebook(tab_control)
+        tab_control.add(sub_tab_control, text=tab_name)
+
+        # Теперь для каждого дочернего элемента xml_element добавим вкладку в sub_tab_control
+        for sub_elem in xml_element:
+            sub_name = sub_elem.get('callerName', sub_elem.get('name', 'Unknown'))
+            if sub_name != "Unknown":
+                self.add_tree_tab(sub_elem, sub_name, sub_tab_control)
     def add_tree_tab(self, xml_element, tab_name, tab_control):
         # Создаем Frame для каждой вкладки
         frame = ttk.Frame(tab_control)
@@ -244,6 +255,28 @@ class Switch(tk.Canvas):
     def is_on(self):
         return self.value
 
+class ScrollableNotebook(ttk.Frame):
+    def __init__(self, container, *args, **kwargs):
+        super().__init__(container, *args, **kwargs)
+        self.canvas = tk.Canvas(self)
+        self.scrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.canvas.xview)
+        self.notebook = ttk.Notebook(self.canvas)
+
+        self.notebook.bind("<Configure>", self.on_configure)
+        self.canvas.configure(xscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="top", fill="both", expand=True)
+        self.scrollbar.pack(side="bottom", fill="x")
+        self.canvas.create_window((0, 0), window=self.notebook, anchor="nw")
+
+    def on_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def add(self, tab, text):
+        self.notebook.add(tab, text=text)
+
+    def pack(self, *args, **kwargs):
+        super().pack(*args, **kwargs)
 
 def main():
     root = ThemedTk()  # Используем ThemedTk вместо стандартного Tk
