@@ -4,7 +4,7 @@ from tkinter import ttk
 from tkinter import filedialog
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageTk
-from ttkthemes import ThemedTk  # Убедитесь, что этот импорт присутствует
+from ttkthemes import ThemedTk
 from tkinter import YES, BOTH
 
 
@@ -16,8 +16,9 @@ class StartFrame(ttk.Frame):
         # Добавление логотипа
         img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'photo.jpg')
         img = Image.open(img_path)  # Загрузка изображения с помощью Pillow
+        img = img.resize((300, 300))  # установка размера изображения
         self.logo = ImageTk.PhotoImage(img)
-        ttk.Label(self, image=self.logo).pack(side="right", padx=10)
+        ttk.Label(self, image=self.logo).pack(side="right", padx=5)
 
         self.use_custom_dir = tk.BooleanVar(value=False)
 
@@ -37,12 +38,25 @@ class StartFrame(ttk.Frame):
         self.dir_button = ttk.Button(self, text="Выбрать папку", command=self.choose_directory, state='disabled')
         self.dir_button.pack(pady=5)
 
-        self.file_listbox = tk.Listbox(self)
-        self.file_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.file_listbox = tk.Listbox(self, width=25)  # Установка ширины выбра файла
+        self.file_listbox.pack(fill=tk.BOTH, expand=True)
 
         ttk.Button(self, text="Start", command=self.start).pack(pady=5)
 
+        self.theme_combobox = ttk.Combobox(self, values=self.controller.available_themes)
+        if self.controller.available_themes:
+            self.theme_combobox.set(
+                self.controller.available_themes[5])  # Устанавливаем первую доступную тему по умолчанию
+        self.theme_combobox.pack(anchor="se", padx=5, pady=5)  # Упаковываем combobox
+
+        self.apply_button = ttk.Button(self, text="Применить", command=self.apply_theme)
+        self.apply_button.pack(anchor="se", padx=5, pady=5)  # Упаковываем кнопку
         self.populate_file_list(os.path.dirname(os.path.abspath(__file__)))
+
+    def apply_theme(self):
+        selected_theme = self.theme_combobox.get()  # Получаем выбранную тему
+        if selected_theme:
+            self.controller.root.set_theme(selected_theme)  # Применяем выбранную тему
 
     def toggle_dir_choice(self):
         if self.switch.is_on:  # Используйте свойство is_on нового виджета Switch
@@ -86,27 +100,23 @@ class StartFrame(ttk.Frame):
 class XMLApp:
     def __init__(self, root):
         self.root = root
-        available_themes = self.root.get_themes()  # Получить доступные темы
-        print("Available themes: ", available_themes)  # Вывести список доступных тем
-        if 'plastik' in available_themes:
-            self.root.set_theme("plastik")  # Применение темы , если она доступна
-        else:
-            print("Theme 'azure' is not available. Please select another theme.")
+        self.available_themes = self.root.get_themes()
 
         self.root.title("XML Viewer")
-        self.root.geometry("800x600")  # Установите размер окна
+        self.root.geometry("600x400")  # Установите размер окна
         self.root.resizable(False, False)  # Запретить изменение размера окна
         self.init_ui()  # Вызов метода init_ui
 
-    def init_ui(self):
-        self.start_frame = StartFrame(self.root, self)
+        self.start_frame = StartFrame(self.root, self)  # Обратите внимание, что мы передаем self как controller
         self.start_frame.pack(expand=tk.YES, fill=tk.BOTH)
+
+    def init_ui(self):
 
         self.tab_control = ttk.Notebook(self.root)
         self.menu = tk.Menu(self.root)
         self.root.config(menu=self.menu)
         self.file_menu = tk.Menu(self.menu)
-        #self.menu.add_cascade(label="File", menu=self.file_menu)
+        # self.menu.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Open", command=self.load_xml)
 
     def load_xml(self, root, tab_control):
@@ -119,12 +129,33 @@ class XMLApp:
                 tab_name = child.get('callerName', child.get('name', 'Unknown'))
                 self.add_tab(child, tab_name, tab_control)
 
-    def populate_tree(self, tree, elem, parent=""):
-        name = elem.tag.split('}')[-1]
-        value = elem.text.strip() if elem.text else "N/A"
-        id = tree.insert(parent, tk.END, text=name, values=(value,))
-        for child in elem:
-            self.populate_tree(tree, child, id)
+    def populate_tree(self, tree, xml_element):
+        # Ваша логика для добавления элементов в дерево.
+        # Например:
+        for elem in xml_element.findall(".//tr:TestGroup", namespaces={"tr": "TestGroup"}):
+            test_name = elem.find(".//CallerName") or elem.find(".//name")
+            status = elem.find(".//tr:Outcome", namespaces={"tr": "Outcome"})
+            value = elem.find(".//tr:Data/c:Collection/c:Item/c:Datum", namespaces={"c": "Datum"})
+            valid_values = self.get_valid_values(elem)
+
+            tree.insert("", "end", text=test_name.text if test_name else "-",
+                        values=(status.text if status else "-",
+                                value.get("value") if value is not None else "-",
+                                valid_values))
+
+    def get_valid_values(self, elem):
+        limits = elem.find(".//tr:TestResult/tr:TestLimits/tr:Limits", namespaces={"tr": "Limits"})
+        if limits is not None:
+            operator = limits.get("operator")
+            ge_limit = limits.find(".//c:Limit[@comparator='GE']", namespaces={"c": "Limit"})
+            le_limit = limits.find(".//c:Limit[@comparator='LE']", namespaces={"c": "Limit"})
+            if operator == "AND" and ge_limit is not None and le_limit is not None:
+                return f"{ge_limit.find('./c:Datum').get('value')} - {le_limit.find('./c:Datum').get('value')}"
+            elif ge_limit is not None:
+                return f"> {ge_limit.find('./c:Datum').get('value')}"
+            elif le_limit is not None:
+                return f"< {le_limit.find('./c:Datum').get('value')}"
+        return "-"
 
     def add_tab(self, elem, name, tab_control):
         tab = ttk.Frame(tab_control)
@@ -167,7 +198,7 @@ class XMLApp:
             print(f"Failed to parse XML: {e}")
             return
 
-        #self.add_tree_tab(root, "Full Tree", tab_control)  # Здесь создается вкладка с полным деревом
+        # self.add_tree_tab(root, "Full Tree", tab_control)  # Здесь создается вкладка с полным деревом
         self.add_tabs_from_xml(root, tab_control)
 
     def add_tabs_from_xml(self, xml_root, tab_control):
@@ -193,23 +224,28 @@ class XMLApp:
             sub_name = sub_elem.get('callerName', sub_elem.get('name', 'Unknown'))
             if sub_name != "Unknown":
                 self.add_tree_tab(sub_elem, sub_name, sub_tab_control)
+
     def add_tree_tab(self, xml_element, tab_name, tab_control):
         # Создаем Frame для каждой вкладки
         frame = ttk.Frame(tab_control)
         tab_control.add(frame, text=tab_name)
 
         # Добавляем Treeview в каждую вкладку
-        tree = ttk.Treeview(frame)
+        tree = ttk.Treeview(frame, columns=("test", "status", "value", "valid_values"))
         tree.pack(expand=YES, fill=BOTH)
 
+        tree.column("#0", width=270, minwidth=270, stretch="NO")
+        tree.column("test", width=150, minwidth=150, stretch="NO")
+        tree.column("status", width=80, minwidth=80, stretch="NO")
+        tree.column("value", width=80, minwidth=80, stretch="NO")
+        tree.column("valid_values", width=120, minwidth=120, stretch="NO")
+
         # Добавляем столбцы
-        tree["columns"] = ("one", "two")
-        tree.column("#0", width=270, minwidth=270)
-        tree.column("one", width=150, minwidth=150)
-        tree.column("two", width=400, minwidth=200)
-        tree.heading("#0", text="Name")
-        tree.heading("one", text="Attribute")
-        tree.heading("two", text="Value")
+        tree.heading("#0", text="Treeview")
+        tree.heading("test", text="Test")
+        tree.heading("status", text="Status")
+        tree.heading("value", text="Value")
+        tree.heading("valid_values", text="Valid Values")
 
         # Добавляем информацию из XML элемента в Treeview
         self.populate_tree(tree, xml_element)
@@ -227,6 +263,7 @@ class XMLApp:
             # Рекурсивно обходим дочерние элементы
             for child in elem.findall(".//*", namespaces=namespaces):
                 self.populate_full_tree(tree, child, id, level + 1)
+
 
 class Switch(tk.Canvas):
     def __init__(self, parent, *args, **kwargs):
@@ -255,6 +292,7 @@ class Switch(tk.Canvas):
     def is_on(self):
         return self.value
 
+
 class ScrollableNotebook(ttk.Frame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
@@ -277,6 +315,7 @@ class ScrollableNotebook(ttk.Frame):
 
     def pack(self, *args, **kwargs):
         super().pack(*args, **kwargs)
+
 
 def main():
     root = ThemedTk()  # Используем ThemedTk вместо стандартного Tk
