@@ -1,15 +1,17 @@
 import os
+import sys
 import tkinter as tk
 import xml.etree.ElementTree as ET
-from tkinter import filedialog
+from tkinter import filedialog, scrolledtext
 from tkinter import messagebox
 from tkinter import ttk, simpledialog
-from tkinter.scrolledtext import ScrolledText
 from typing import Tuple
+
+from PIL import Image, ImageTk
 from ttkthemes import ThemedTk
+
 from ScrollableNotebook import ScrollableNotebook
 from Switch import Switch
-from PIL import Image, ImageTk
 
 
 def lookahead(iterable):
@@ -80,7 +82,7 @@ class StartFrame(ttk.Frame):
         self.logo = ImageTk.PhotoImage(img)
         ttk.Label(self, image=self.logo).grid(row=0, column=1, rowspan=4, padx=5, pady=5, sticky='ne')
 
-        self.apply_button = ttk.Button(self, text="F.A.Q.", command=self.show_faq)
+        self.apply_button = ttk.Button(self, text="Инструкция", command=self.show_faq)
         self.apply_button.grid(row=4, column=1, padx=5, pady=5, sticky='sw')
 
         self.theme_combobox = ttk.Combobox(self, values=self.controller.available_themes, width=8)
@@ -91,7 +93,17 @@ class StartFrame(ttk.Frame):
         self.apply_button = ttk.Button(self, text="Применить", command=self.apply_theme)
         self.apply_button.grid(row=4, column=1, padx=5, pady=5, sticky='se')
 
-        self.populate_file_list(os.path.dirname(os.path.abspath(__file__)))
+        # Определите путь к корневой директории в зависимости от способа запуска
+        if getattr(sys, 'frozen', False):
+            # Запуск из exe
+            exe_dir = os.path.dirname(sys.executable)
+            os.path.dirname(exe_dir)  # Установите рабочую директорию на директорию EXE-файла
+            self.root_dir = os.path.dirname(os.path.abspath(__file__))
+        else:
+            # Запуск из скрипта Python
+            self.root_dir = os.path.dirname(os.path.abspath(__file__))
+
+        self.populate_file_list(self.root_dir)
 
         # Конфигурация grid
         self.grid_columnconfigure(0, weight=1)
@@ -103,26 +115,31 @@ class StartFrame(ttk.Frame):
             self.controller.root.set_theme(selected_theme)  # Применяем выбранную тему
 
     def show_faq(self):
-        # Создайте новое окно для отображения информации из текстового файла
         faq_window = tk.Toplevel(self)
-        faq_window.title("F.A.Q.")
+        faq_window.title("Инструкция")
 
-        # Загрузите информацию из текстового файла с явно указанной кодировкой UTF-8
         try:
             with open("faq.txt", "r", encoding="utf-8") as file:
                 faq_text = file.read()
-                text_widget = ScrolledText(faq_window, wrap=tk.WORD, width=50, height=20)
+                text_widget = scrolledtext.ScrolledText(faq_window, wrap=tk.WORD, width=50, height=20)
                 text_widget.insert(tk.END, faq_text)
                 text_widget.pack(fill=tk.BOTH, expand=True)
         except FileNotFoundError:
             messagebox.showerror("Ошибка", "Файл FAQ.txt не найден.")
 
-        # Создайте рамку для размещения виджетов для отправки писем
         email_frame = tk.Frame(faq_window)
         email_frame.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
 
-        # Добавьте виджеты для отправки писем внутри рамки
-        tk.Label(email_frame, text="email для обратной связи: epbazh@spels.ru").pack()
+        email_label = tk.Label(email_frame, text="email для обратной связи: epbazh@spels.ru", fg="blue", cursor="hand2")
+        email_label.pack()
+        email_label.bind("<Button-1>", self.copy_email_to_clipboard)
+
+    def copy_email_to_clipboard(self, event):
+        email = "epbazh@spels.ru"
+        self.clipboard_clear()
+        self.clipboard_append(email)
+        messagebox.showinfo("Копирование", f"Адрес {email} скопирован в буфер обмена.")
+
 
     def toggle_dir_choice(self):
         if self.switch.is_on:  # Используйте свойство is_on нового виджета Switch
@@ -219,7 +236,9 @@ class XMLApp:
 
     def start_analysis(self, file_path):
         result_window = tk.Toplevel(self.root)
-        result_window.title("Result")
+        file_name = os.path.basename(file_path)  # Получаем имя файла с расширением
+        file_name_without_extension = os.path.splitext(file_name)[0]  # Убираем расширение файла
+        result_window.title(f"Result_{file_name_without_extension}")
         result_window.geometry("1200x500")
         result_window.resizable(True, True)
 
@@ -333,14 +352,22 @@ class XMLApp:
                 low_limit_elem = elem.find(
                     "./tr:TestLimits/tr:Limits/c:LimitPair/c:Limit[@comparator='GE']/c:Datum",
                     namespaces=namespaces)
-                low_limit = low_limit_elem.get("value") if low_limit_elem is not None else ' '
+                low_limit = low_limit_elem.get("value") if low_limit_elem is not None else None
 
                 high_limit_elem = elem.find(
                     "./tr:TestLimits/tr:Limits/c:LimitPair/c:Limit[@comparator='LE']/c:Datum",
                     namespaces=namespaces)
-                high_limit = high_limit_elem.get("value") if high_limit_elem is not None else ' '
+                high_limit = high_limit_elem.get("value") if high_limit_elem is not None else None
 
-                valid_values_str = f"{low_limit} < > {high_limit}"
+                if low_limit is not None and high_limit is not None:
+                    valid_values_str = f"{low_limit} ÷ {high_limit}"
+                elif low_limit is not None:
+                    valid_values_str = f"> {low_limit}"
+                elif high_limit is not None:
+                    valid_values_str = f"< {high_limit}"
+                else:
+                    valid_values_str = "Не определено"
+
                 values = (status, value, valid_values_str)
 
                 parent = tree.insert(parent, tk.END, text=name, values=values)
