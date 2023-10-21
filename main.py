@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import tkinter as tk
@@ -69,12 +70,28 @@ class StartFrame(ttk.Frame):
         self.dir_entry.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
 
         self.dir_button = ttk.Button(self, text="Выбрать папку", command=self.choose_directory, state='disabled')
-        self.dir_button.grid(row=2, column=0, padx=5, pady=5)
+        self.dir_button.grid(row=0, column=0, padx=5, pady=5, sticky='se')
 
         self.file_listbox = tk.Listbox(self, width=25)
         self.file_listbox.grid(row=3, column=0, padx=5, pady=5, sticky='nsew')
 
-        ttk.Button(self, text="Start", command=self.start).grid(row=4, column=0, padx=5, pady=5)
+        self.skip_user_defined_var = tk.BooleanVar()
+        self.skip_user_defined_checkbox = ttk.Checkbutton(self, text="Skip UserDefined",
+                                                          variable=self.skip_user_defined_var)
+        self.skip_user_defined_checkbox.grid(row=4, column=0, padx=5, pady=(0, 30), sticky='sw')
+
+        self.rounding_var = tk.StringVar(value="no rounding")
+        self.rounding_combobox = ttk.Combobox(self, textvariable=self.rounding_var, values=[
+            "no rounding",
+            "up to 2 characters upward",
+            "up to 2 decimal places",
+            "up to 3 characters upward",
+            "up to 3 decimal places"
+        ])
+        self.rounding_combobox.set("no rounding")
+        self.rounding_combobox.grid(row=4, column=0, padx=5, pady=(0, 5), sticky='sw')
+
+        ttk.Button(self, text="Start", command=self.start).grid(row=4, column=0, padx=5, pady=5, sticky='se')
 
         img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'photo.jpg')
         img = Image.open(img_path)
@@ -88,7 +105,7 @@ class StartFrame(ttk.Frame):
         self.theme_combobox = ttk.Combobox(self, values=self.controller.available_themes, width=8)
         if self.controller.available_themes:
             self.theme_combobox.set(self.controller.available_themes[0])
-        self.theme_combobox.grid(row=4, column=1, padx=5, pady=10, ipadx=5, ipady=1, sticky='s')
+        self.theme_combobox.grid(row=4, column=1, padx=5, pady=(5, 10), sticky='s')
 
         self.apply_button = ttk.Button(self, text="Применить", command=self.apply_theme)
         self.apply_button.grid(row=4, column=1, padx=5, pady=5, sticky='se')
@@ -119,7 +136,7 @@ class StartFrame(ttk.Frame):
         faq_window.title("Инструкция")
 
         try:
-            with open("faq.txt", "r", encoding="utf-8") as file:
+            with open("tamplete/FAQ.txt", "r", encoding="utf-8") as file:
                 faq_text = file.read()
                 text_widget = scrolledtext.ScrolledText(faq_window, wrap=tk.WORD, width=50, height=20)
                 text_widget.insert(tk.END, faq_text)
@@ -139,7 +156,6 @@ class StartFrame(ttk.Frame):
         self.clipboard_clear()
         self.clipboard_append(email)
         messagebox.showinfo("Копирование", f"Адрес {email} скопирован в буфер обмена.")
-
 
     def toggle_dir_choice(self):
         if self.switch.is_on:  # Используйте свойство is_on нового виджета Switch
@@ -166,7 +182,7 @@ class StartFrame(ttk.Frame):
     def start(self):
         selected_file = self.file_listbox.get(tk.ACTIVE)
         directory = self.dir_entry.get()
-
+        rounding_value = self.rounding_var.get()
         if not selected_file:
             messagebox.showerror("Ошибка", "Файл не выбран.")
             return
@@ -176,7 +192,8 @@ class StartFrame(ttk.Frame):
 
         file_path = os.path.join(directory, selected_file)
 
-        self.controller.start_analysis(file_path)
+        # Передаем состояние чекбокса в метод start_analysis
+        self.controller.start_analysis(file_path, self.skip_user_defined_var.get())
 
 
 def generate_file(*trees: Tuple[str, MyTreeview]):
@@ -203,6 +220,17 @@ class XMLApp:
         self.start_frame = StartFrame(root, self)  # Обратите внимание, что мы передаем self как controller
         self.start_frame.pack(expand=tk.YES, fill=tk.BOTH)
 
+    def copy_cell_value(self, event):
+        tree = event.widget
+        rowid = tree.focus()
+        col_id = tree.identify_column(event.x)
+        col_num = int(col_id.split("#")[-1]) - 1
+        if col_num >= 0:  # Убедитесь, что номер столбца валиден
+            value = tree.item(rowid, 'values')[col_num]
+            self.root.clipboard_clear()
+            self.root.clipboard_append(value)
+            self.root.update()
+
     def copy_line(self, event):
         rowid = event.widget.focus()
         line = event.widget.get_line(rowid)
@@ -224,17 +252,22 @@ class XMLApp:
 
     @staticmethod
     def edit_value(event):
-        rowid = event.widget.focus()  # Получаем выделенный элемент
-        column = event.widget.identify_column(event.x)  # Определяем, в каком столбце произошел клик
-        col_num = int(column[1:])  # Получаем номер столбца
+        tree = event.widget
+        rowid = tree.focus()
+        col_id = tree.identify_column(event.x)
+        col_num = int(col_id.split("#")[-1]) - 1
 
-        new_value = simpledialog.askstring("Edit Value", f"Enter new value")
-        if new_value is not None and new_value.strip():
-            line = [event.widget.item(rowid, 'text'), *event.widget.item(rowid, 'values')]
-            line[col_num] = new_value
-            event.widget.item(rowid, text=line[0], values=line[1:])
+        if col_num >= 0:  # Убедитесь, что номер столбца валиден
+            old_value = tree.item(rowid, 'values')[col_num]
+            column_name = tree.heading(col_id, 'text')
 
-    def start_analysis(self, file_path):
+            new_value = simpledialog.askstring(f"Edit {column_name}", f"Enter new value:", initialvalue=old_value)
+            if new_value is not None:
+                line = [tree.item(rowid, 'text'), *tree.item(rowid, 'values')]
+                line[col_num + 1] = new_value  # +1 потому что первый элемент в line - это текст, а не значение
+                tree.item(rowid, text=line[0], values=line[1:])
+
+    def start_analysis(self, file_path, skip_user_defined):
         result_window = tk.Toplevel(self.root)
         file_name = os.path.basename(file_path)  # Получаем имя файла с расширением
         file_name_without_extension = os.path.splitext(file_name)[0]  # Убираем расширение файла
@@ -255,9 +288,9 @@ class XMLApp:
             print(f"Failed to parse XML: {e}")
             return
 
-        self.populate_root_notebook(root, root_note)
+        self.populate_root_notebook(root, root_note, skip_user_defined)
 
-    def populate_root_notebook(self, xml_root, tab_control):
+    def populate_root_notebook(self, xml_root, tab_control, skip_user_defined):
         namespaces = {'tr': 'urn:IEEE-1636.1:2011:01:TestResults'}
 
         for elem in xml_root.findall('.//tr:ResultSet', namespaces=namespaces):
@@ -265,13 +298,16 @@ class XMLApp:
                 tag = child.tag.split('}')[-1]
                 name = child.get('callerName', child.get('name'))
                 if tag == 'Test':
-                    self.add_treeview_tab(child, name, tab_control)
+                    # Проверяем статус и пропускаем элемент, если необходимо
+                    status = child.find('./tr:Outcome', namespaces=namespaces)
+                    if skip_user_defined and status is not None and status.get('value') == 'UserDefined':
+                        continue
+                    self.add_treeview_tab(child, name, tab_control, skip_user_defined)
                 elif tag == 'TestGroup':
                     if name != "Unknown":
-                        self.add_root_tab(child, name, tab_control)
+                        self.add_root_tab(child, name, tab_control, skip_user_defined)
 
-    def add_root_tab(self, xml_element, tab_name: str, notebook: ttk.Notebook):
-        # Создаем новый Frame для каждой вкладки
+    def add_root_tab(self, xml_element, tab_name: str, notebook: ttk.Notebook, skip_user_defined):
         frame = ttk.Frame(notebook)
         notebook.add(frame, text=tab_name)
 
@@ -284,10 +320,10 @@ class XMLApp:
             child_name = child.get('callerName', child.get('name'))
             if child_name is not None:
                 self.treeviews.append(
-                    (child_name, self.add_treeview_tab(child, child_name, sub_notebook))
+                    (child_name, self.add_treeview_tab(child, child_name, sub_notebook, skip_user_defined))
                 )
 
-    def add_treeview_tab(self, xml_element, tab_name, notebook):
+    def add_treeview_tab(self, xml_element, tab_name, notebook, skip_user_defined):
         # Создаем Frame для каждой вкладки
         frame = ttk.Frame(notebook)
         notebook.add(frame, text=tab_name)
@@ -313,6 +349,7 @@ class XMLApp:
         tree.bind("<Double-1>", self.edit_value)
         tree.bind("<Control-e>", self.edit_value)
         tree.bind("<Control-r>", self.copy_group)
+        tree.bind("<Control-w>", self.copy_cell_value)
 
         export_button = ttk.Button(tree, text='Export This',
                                    command=lambda: generate_file((tab_name, tree)))
@@ -322,11 +359,29 @@ class XMLApp:
         export_all_button.pack(expand=False, anchor='se', side='bottom')
         export_button.pack(expand=False, anchor='se', side='bottom')
 
-        self.populate_tree(tree, xml_element)
+        self.populate_tree(tree, xml_element, skip_user_defined=skip_user_defined)
         return tree
 
+    def round_value(self, value):
+        rounding_option = self.start_frame.rounding_var.get()
+        try:
+            num = float(value)
+        except ValueError:
+            return value  # Возвращаем исходное значение, если оно не является числом
+
+        if rounding_option == "up to 2 characters upward":
+            return f"{round(num, 2):.2f}"
+        elif rounding_option == "up to 2 decimal places":
+            return f"{math.floor(num * 100) / 100:.2f}"
+        elif rounding_option == "up to 3 characters upward":
+            return f"{round(num, 3):.3f}"
+        elif rounding_option == "up to 3 decimal places":
+            return f"{math.floor(num * 1000) / 1000:.3f}"
+        else:  # "no rounding" или любой другой вариант
+            return value
+
     # Метод для добавления элементов в дерево
-    def populate_tree(self, tree, elem, parent=""):
+    def populate_tree(self, tree, elem, parent="", skip_user_defined=False):
         namespaces = {
             "tr": "urn:IEEE-1636.1:2011:01:TestResults",
             "c": "urn:IEEE-1671:2010:Common"
@@ -339,38 +394,45 @@ class XMLApp:
                 outcome = elem.find('./tr:ActionOutcome', namespaces=namespaces)
             status = outcome.get('value', 'N/A') if outcome is not None else 'N/A'
 
-            if elem.tag.endswith("SessionAction"):
-                parent = tree.insert(parent, tk.END, text=name, values=(status, '', ''))
-            elif elem.tag.endswith("Test"):
-                value_elem = elem.find('./tr:Data/c:Collection/c:Item/c:Datum', namespaces=namespaces)
-                value = value_elem.get('value', 'N/A') if value_elem is not None else 'N/A'
-                parent = tree.insert(parent, tk.END, text=name, values=(status, value, ''))
-            elif elem.tag.endswith("TestResult"):
-                value_elem = elem.find("./tr:TestData/c:Datum", namespaces=namespaces)
-                value = value_elem.get("value") if value_elem is not None else 'N/A'
+            if skip_user_defined and status == "UserDefined":
+                # Если skip_user_defined включен и статус равен "UserDefined",
+                # мы пропускаем добавление этого элемента в дерево,
+                # но продолжаем обработку его дочерних элементов.
+                pass
+            else:
+                if elem.tag.endswith("SessionAction"):
+                    parent = tree.insert(parent, tk.END, text=name, values=(status, '', ''))
+                elif elem.tag.endswith("Test"):
+                    value_elem = elem.find('./tr:Data/c:Collection/c:Item/c:Datum', namespaces=namespaces)
+                    value = value_elem.get('value', 'N/A') if value_elem is not None else 'N/A'
+                    parent = tree.insert(parent, tk.END, text=name, values=(status, value, ''))
+                elif elem.tag.endswith("TestResult"):
+                    value_elem = elem.find("./tr:TestData/c:Datum", namespaces=namespaces)
+                    value = value_elem.get("value") if value_elem is not None else 'N/A'
+                    value = self.round_value(value)
 
-                low_limit_elem = elem.find(
-                    "./tr:TestLimits/tr:Limits/c:LimitPair/c:Limit[@comparator='GE']/c:Datum",
-                    namespaces=namespaces)
-                low_limit = low_limit_elem.get("value") if low_limit_elem is not None else None
+                    low_limit_elem = elem.find(
+                        "./tr:TestLimits/tr:Limits/c:LimitPair/c:Limit[@comparator='GE']/c:Datum",
+                        namespaces=namespaces)
+                    low_limit = low_limit_elem.get("value") if low_limit_elem is not None else None
 
-                high_limit_elem = elem.find(
-                    "./tr:TestLimits/tr:Limits/c:LimitPair/c:Limit[@comparator='LE']/c:Datum",
-                    namespaces=namespaces)
-                high_limit = high_limit_elem.get("value") if high_limit_elem is not None else None
+                    high_limit_elem = elem.find(
+                        "./tr:TestLimits/tr:Limits/c:LimitPair/c:Limit[@comparator='LE']/c:Datum",
+                        namespaces=namespaces)
+                    high_limit = high_limit_elem.get("value") if high_limit_elem is not None else None
 
-                if low_limit is not None and high_limit is not None:
-                    valid_values_str = f"{low_limit} ÷ {high_limit}"
-                elif low_limit is not None:
-                    valid_values_str = f"> {low_limit}"
-                elif high_limit is not None:
-                    valid_values_str = f"< {high_limit}"
-                else:
-                    valid_values_str = "Не определено"
+                    if low_limit is not None and high_limit is not None:
+                        valid_values_str = f"{low_limit} ÷ {high_limit}"
+                    elif low_limit is not None:
+                        valid_values_str = f"> {low_limit}"
+                    elif high_limit is not None:
+                        valid_values_str = f"< {high_limit}"
+                    else:
+                        valid_values_str = "Не определено"
 
-                values = (status, value, valid_values_str)
+                    values = (status, value, valid_values_str)
 
-                parent = tree.insert(parent, tk.END, text=name, values=values)
+                    parent = tree.insert(parent, tk.END, text=name, values=values)
 
         group_map = dict()
         existing = set()
@@ -387,7 +449,7 @@ class XMLApp:
             name = child.get('callerName', child.get('name'))
             if name is None:
                 continue
-            self.populate_tree(tree, child, parent=group_map.get(name, parent))
+            self.populate_tree(tree, child, parent=group_map.get(name, parent), skip_user_defined=skip_user_defined)
 
 
 def main():
