@@ -9,6 +9,7 @@ from tkinter import ttk, simpledialog
 from typing import Tuple
 
 from PIL import Image, ImageTk
+from pkg_resources import resource_string
 from ttkthemes import ThemedTk
 
 from ScrollableNotebook import ScrollableNotebook
@@ -113,12 +114,15 @@ class StartFrame(ttk.Frame):
         # Определите путь к корневой директории в зависимости от способа запуска
         if getattr(sys, 'frozen', False):
             # Запуск из exe
-            exe_dir = os.path.dirname(sys.executable)
-            os.path.dirname(exe_dir)  # Установите рабочую директорию на директорию EXE-файла
-            self.root_dir = os.path.dirname(os.path.abspath(__file__))
+            self.root_dir = os.path.dirname(sys.executable)
         else:
             # Запуск из скрипта Python
             self.root_dir = os.path.dirname(os.path.abspath(__file__))
+
+        #log_file_path = os.path.join(self.root_dir, 'app.log')
+        #logging.basicConfig(filename=log_file_path, level=logging.DEBUG,
+        #                    format='%(asctime)s - %(levelname)s - %(message)s')
+        #logging.debug(self.root_dir)
 
         self.populate_file_list(self.root_dir)
 
@@ -136,11 +140,17 @@ class StartFrame(ttk.Frame):
         faq_window.title("Инструкция")
 
         try:
-            with open("tamplete/FAQ.txt", "r", encoding="utf-8") as file:
-                faq_text = file.read()
-                text_widget = scrolledtext.ScrolledText(faq_window, wrap=tk.WORD, width=50, height=20)
-                text_widget.insert(tk.END, faq_text)
-                text_widget.pack(fill=tk.BOTH, expand=True)
+            if getattr(sys, 'frozen', False):
+                # Если приложение запущено как исполняемый файл
+                faq_text = resource_string(__name__, "tamplete/FAQ.txt").decode('utf-8')
+            else:
+                # Если приложение запущено как скрипт
+                with open("tamplete/FAQ.txt", "r", encoding="utf-8") as file:
+                    faq_text = file.read()
+
+            text_widget = scrolledtext.ScrolledText(faq_window, wrap=tk.WORD, width=55, height=30)
+            text_widget.insert(tk.END, faq_text)
+            text_widget.pack(fill=tk.BOTH, expand=True)
         except FileNotFoundError:
             messagebox.showerror("Ошибка", "Файл FAQ.txt не найден.")
 
@@ -164,7 +174,7 @@ class StartFrame(ttk.Frame):
         else:
             self.dir_entry.config(state='disabled')
             self.dir_button.config(state='disabled')
-            self.populate_file_list(os.path.dirname(os.path.abspath(__file__)))
+            self.populate_file_list(self.root_dir)
 
     def choose_directory(self):
         folder_selected = filedialog.askdirectory()
@@ -181,8 +191,7 @@ class StartFrame(ttk.Frame):
 
     def start(self):
         selected_file = self.file_listbox.get(tk.ACTIVE)
-        directory = self.dir_entry.get()
-        rounding_value = self.rounding_var.get()
+        directory = self.dir_entry.get() if self.switch.is_on else self.root_dir
         if not selected_file:
             messagebox.showerror("Ошибка", "Файл не выбран.")
             return
