@@ -506,6 +506,11 @@ class XMLApp:
 
                 parent_id = tree.add_item_with_checkbox(parent, name, values)
 
+                # Проверяем статус и применяем красный цвет фона для элементов с FAIL
+                if "Failed" in values:
+                    tree.item(parent_id, tags=('failed',))
+                    tree.tag_configure('failed', background='red')
+
                 # Рекурсивно обрабатываем дочерние элементы
                 for child in elem:
                     self.populate_tree(tree, child, parent_id, skip_user_defined)
