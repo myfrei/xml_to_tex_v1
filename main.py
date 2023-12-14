@@ -33,21 +33,73 @@ def lookahead(iterable):
 
 
 class MyTreeview(ttk.Treeview):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.checkboxes = {}  # Словарь для отслеживания состояния чекбоксов
+        self.bind('<ButtonRelease-1>', self.on_click)  # Обработчик кликов
+        self["columns"] = ("checkbox", "status", "value", "valid_values")
+
+        self.column("#0", width=0, stretch=tk.NO)  # Скрываем первый столбец
+        self.column("checkbox", width=20, anchor='center')
+        self.heading("checkbox", text='')
+
+        # Настройка остальных столбцов
+        self.column("status", width=150)
+        self.column("value", width=150)
+        self.column("valid_values", width=150)
+
+        self.heading("status", text="Status")
+        self.heading("value", text="Value")
+        self.heading("valid_values", text="Valid Values")
+
     def get_line(self, rowid):
-        return '\t'.join((
-            self.item(rowid, 'text'),
-            *self.item(rowid, 'values')
-        ))
+        # Извлекаем текст и значения, связанные с узлом
+        return '\t'.join([self.item(rowid, 'text')] + list(self.item(rowid, 'values')))
+
+    def add_item_with_checkbox(self, parent, text, values):
+        checkbox_state = tk.BooleanVar(value=True)  # Включен по умолчанию
+        rowid = self.insert(parent, tk.END, text=text, values=('', *values))
+        self.checkboxes[rowid] = checkbox_state
+        self.update_checkbox(rowid)
+        return rowid
+
+    def update_checkbox(self, rowid):
+        checkbox_symbol = "☑" if self.checkboxes[rowid].get() else "☐"
+        self.set(rowid, "checkbox", checkbox_symbol)  # Обновление символа чекбокса
+
+    def on_click(self, event):
+        region = self.identify("region", event.x, event.y)
+        if region == "cell":
+            col = self.identify_column(event.x)
+            if col == "#1":  # Проверяем, что клик был в колонке чекбоксов
+                rowid = self.identify_row(event.y)
+                if rowid in self.checkboxes:
+                    self.toggle_checkbox_and_parents(rowid)
+
+    def toggle_checkbox_and_parents(self, rowid):
+        current_value = self.checkboxes[rowid].get()
+        self.checkboxes[rowid].set(not current_value)
+        self.update_checkbox(rowid)
+
+        # Рекурсивно обновляем чекбоксы родителей
+        self.update_parent_checkboxes(self.parent(rowid))
+
+    def update_parent_checkboxes(self, parentid):
+        if parentid:
+            self.checkboxes[parentid].set(True)
+            self.update_checkbox(parentid)
+            self.update_parent_checkboxes(self.parent(parentid))
 
     def write(self, f, parent='', is_latest_parent=False, level=0):
         for child, is_latest in lookahead(self.get_children(parent)):
-            prefix = ' '.join((
-                *('│' * (level - is_latest_parent)),
-                '  ' * is_latest_parent + '└─' if is_latest else '├─'
-            ))
+            if self.checkboxes.get(child) and not self.checkboxes[child].get():
+                continue
 
-            line = prefix + self.get_line(child).rstrip() + '\n'
+            # Получаем данные строки
+            line = self.get_line(child).rstrip() + '\n'
             f.write(line)
+
+            # Рекурсивно обрабатываем дочерние элементы
             self.write(f, child, is_latest, level + 1)
 
 
@@ -360,16 +412,29 @@ class XMLApp:
         tree.bind("<Control-r>", self.copy_group)
         tree.bind("<Control-w>", self.copy_cell_value)
 
+        buttons_frame = ttk.Frame(frame)
+        buttons_frame.pack(expand=False, anchor='sw', side='bottom', fill='x')
+
         export_button = ttk.Button(tree, text='Export This',
                                    command=lambda: generate_file((tab_name, tree)))
+        export_button.pack(expand=False, anchor='se', side='right')
         export_all_button = ttk.Button(tree, text="Export All",
                                        width=export_button['width'],
                                        command=lambda: generate_file(*self.treeviews))
         export_all_button.pack(expand=False, anchor='se', side='bottom')
-        export_button.pack(expand=False, anchor='se', side='bottom')
+
+        toggle_checkboxes_button = ttk.Button(buttons_frame, text="Вкл/Выкл все чекбоксы",
+                                              command=lambda: self.toggle_all_checkboxes(tree))
+        toggle_checkboxes_button.pack(expand=False, anchor='sw', side='left')
 
         self.populate_tree(tree, xml_element, skip_user_defined=skip_user_defined)
         return tree
+
+    def toggle_all_checkboxes(self, tree):
+        new_state = not any(tree.checkboxes[child].get() for child in tree.checkboxes)
+        for child in tree.checkboxes:
+            tree.checkboxes[child].set(new_state)
+            tree.update_checkbox(child)
 
     def round_value(self, value):
         rounding_option = self.start_frame.rounding_var.get()
@@ -404,17 +469,15 @@ class XMLApp:
             status = outcome.get('value', 'N/A') if outcome is not None else 'N/A'
 
             if skip_user_defined and status == "UserDefined":
-                # Если skip_user_defined включен и статус равен "UserDefined",
-                # мы пропускаем добавление этого элемента в дерево,
-                # но продолжаем обработку его дочерних элементов.
                 pass
             else:
+                values = []
                 if elem.tag.endswith("SessionAction"):
-                    parent = tree.insert(parent, tk.END, text=name, values=(status, '', ''))
+                    values = (status, '', '')
                 elif elem.tag.endswith("Test"):
                     value_elem = elem.find('./tr:Data/c:Collection/c:Item/c:Datum', namespaces=namespaces)
                     value = value_elem.get('value', 'N/A') if value_elem is not None else 'N/A'
-                    parent = tree.insert(parent, tk.END, text=name, values=(status, value, ''))
+                    values = (status, value, '')
                 elif elem.tag.endswith("TestResult"):
                     value_elem = elem.find("./tr:TestData/c:Datum", namespaces=namespaces)
                     value = value_elem.get("value") if value_elem is not None else 'N/A'
@@ -441,24 +504,11 @@ class XMLApp:
 
                     values = (status, value, valid_values_str)
 
-                    parent = tree.insert(parent, tk.END, text=name, values=values)
+                parent_id = tree.add_item_with_checkbox(parent, name, values)
 
-        group_map = dict()
-        existing = set()
-        for child in elem:
-            name = child.get('callerName', child.get('name'))
-            if name is None:
-                continue
-            if name in existing and name not in group_map:
-                group_map[name] = tree.insert(parent, tk.END, text=name)
-            existing.add(name)
-        del existing
-
-        for child in elem:
-            name = child.get('callerName', child.get('name'))
-            if name is None:
-                continue
-            self.populate_tree(tree, child, parent=group_map.get(name, parent), skip_user_defined=skip_user_defined)
+                # Рекурсивно обрабатываем дочерние элементы
+                for child in elem:
+                    self.populate_tree(tree, child, parent_id, skip_user_defined)
 
 
 def main():
